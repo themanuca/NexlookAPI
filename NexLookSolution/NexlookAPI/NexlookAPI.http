@@ -1,0 +1,6 @@
+@NexlookAPI_HostAddress = http://localhost:5147
+
+GET {{NexlookAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
