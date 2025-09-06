@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36221.1 d17.14
+VisualStudioVersion = 17.14.36221.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NexlookAPI", "NexlookAPI\NexlookAPI.csproj", "{90924A4A-0869-481D-8445-2A11E602E0D5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain", "Domain\Domain.csproj", "{4EEBABD7-24B8-4F93-BC4F-D6F75E8EBDD6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application", "Application\Application.csproj", "{37998003-D074-4608-95DE-B21CBEF0C824}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infra", "Infra\Infra.csproj", "{C450B130-76F7-47BE-AA04-5A69347A72E0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{37998003-D074-4608-95DE-B21CBEF0C824}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{37998003-D074-4608-95DE-B21CBEF0C824}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{37998003-D074-4608-95DE-B21CBEF0C824}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C450B130-76F7-47BE-AA04-5A69347A72E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C450B130-76F7-47BE-AA04-5A69347A72E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C450B130-76F7-47BE-AA04-5A69347A72E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C450B130-76F7-47BE-AA04-5A69347A72E0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

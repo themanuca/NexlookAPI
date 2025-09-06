@@ -11,6 +11,7 @@ namespace Application.DTOs
     {
         public IFormFile File { get; set; }
         public string? Categoria { get; set; }
-        public string? Descricao { get; set; }
+        public string? Nome { get; set; }
+        public string Id { get; set; } = Guid.NewGuid().ToString();
     }
 }
