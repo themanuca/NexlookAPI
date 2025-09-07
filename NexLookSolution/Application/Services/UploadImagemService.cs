@@ -2,6 +2,8 @@
 using Application.Interfaces;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
+using Domain.Models;
+using Infra.dbContext;
 using Microsoft.Extensions.Configuration;
 
 namespace Application.Services
@@ -10,8 +12,8 @@ namespace Application.Services
     {
         private readonly Cloudinary _cloudinary;
         private readonly string _uploadPreset;
-
-        public UploadImagemService(IConfiguration configuration)
+        private readonly AppDbContext _context;
+        public UploadImagemService(IConfiguration configuration, AppDbContext context)
         {
             var account = new Account(
                 configuration["Storage:CLOUDINARY_CLOUD_NAME"],
@@ -20,8 +22,75 @@ namespace Application.Services
             );
             _cloudinary = new Cloudinary(account);
             _uploadPreset = configuration["Storage:CLOUDINARY_UPLOAD_PRESET"];
+            _context = context;
         }
 
+        public async Task<UploadResponse> UploadLookAsync(RoupaItem roupa)
+        {
+            if (roupa == null || roupa.File == null || roupa.File.Length == 0)
+            {
+                return new UploadResponse
+                {
+                    Sucesso = false,
+                    Mensagem = "Nenhuma imagem fornecida."
+                };
+            }
+            try
+            {
+               
+                var uploadResult = await UploadImagemAsync(roupa);
+                if (!uploadResult.Sucesso)
+                {
+                    return uploadResult;
+                }
+
+                if(roupa.Categoria == null || roupa.Nome == null)
+                {
+                    return new UploadResponse
+                    {
+                        Sucesso = false,
+                        Mensagem = "Categoria ou Nome não fornecidos."
+                    };
+                }
+                // Cria o Look
+                var look = new Look
+                {
+                    Id = uploadResult.Id,
+                    Titulo = roupa.Nome,
+                    Descricao = roupa.Categoria,
+                    DataCriacao = DateTime.UtcNow
+                };
+
+                // Cria a imagem associada ao Look
+                var lookImage = new LookImage
+                {
+                    LookId = look.Id,
+                    Id = Guid.NewGuid(),
+                    ImageUrl = uploadResult.ImageUrl,
+                    Look = look
+                };
+
+                await _context.Looks.AddAsync(look);
+                await _context.LookImages.AddAsync(lookImage);
+                await _context.SaveChangesAsync();
+
+                return new UploadResponse
+                {
+                    Sucesso = true,
+                    ImageUrl = uploadResult.ImageUrl,
+                    Id = look.Id,
+                    Mensagem = "Look criado com sucesso!"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new UploadResponse
+                {
+                    Sucesso = false,
+                    Mensagem = $"Erro durante o upload: {ex.Message}"
+                };
+            }
+        }
         public async Task<UploadResponse> UploadImagemAsync(RoupaItem roupaItem)
         {
             if (roupaItem == null || roupaItem.File == null || roupaItem.File.Length == 0)

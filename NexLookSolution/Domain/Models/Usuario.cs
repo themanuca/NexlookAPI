@@ -11,7 +11,7 @@ namespace Domain.Models
         public Guid Id { get; set; }
         public required string Nome { get; set; }
         public required string Email { get; set; }
-        public required string SenhaHash { get; set; }
+        public  string SenhaHash { get; set; }
         public DateTime DataCriacao { get; set; }
         public DateTime DataAtualizacao { get; set; }
         public ICollection<Subscricao> Subscriptions { get; set; } = new List<Subscricao>();
