@@ -67,6 +67,7 @@ public class AuthService : IAuthService
 
         var user = new Usuario
         {
+            Id = Guid.NewGuid(),
             Nome = request.Nome,
             Email = request.Email,
             DataCriacao = DateTime.UtcNow,
