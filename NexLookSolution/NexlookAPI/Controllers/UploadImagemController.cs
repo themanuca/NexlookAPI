@@ -32,7 +32,7 @@ namespace NexlookAPI.Controllers
         public Task<IActionResult> UploadImagem([FromForm] RoupaItem roupaItem)
         {
             var userId = GetUserId();
-            return _uploadImagemService.UploadImagemAsync(roupaItem)
+            return _uploadImagemService.UploadLookAsync(roupaItem, userId)
                 .ContinueWith<IActionResult>(task =>
                 {
                     if (task.Result.Sucesso)

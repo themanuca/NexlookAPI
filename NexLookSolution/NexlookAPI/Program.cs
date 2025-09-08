@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Threading.RateLimiting;
 
 
 // Desativa o mapeamento automático de claims (ex: sub → nameidentifier)
@@ -41,7 +42,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IUploadImagemService, UploadImagemService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-
+builder.Services.AddAuthorization();
 
 // Adicione esta configuração do CORS
 builder.Services.AddCors(options =>
@@ -102,8 +103,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
-app.UseAuthorization();
 app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 
 app.Run();

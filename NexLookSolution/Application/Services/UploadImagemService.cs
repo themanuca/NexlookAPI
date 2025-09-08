@@ -25,7 +25,7 @@ namespace Application.Services
             _context = context;
         }
 
-        public async Task<UploadResponse> UploadLookAsync(RoupaItem roupa)
+        public async Task<UploadResponse> UploadLookAsync(RoupaItem roupa, Guid usuarioId)
         {
             if (roupa == null || roupa.File == null || roupa.File.Length == 0)
             {
@@ -52,13 +52,25 @@ namespace Application.Services
                         Mensagem = "Categoria ou Nome não fornecidos."
                     };
                 }
+                var usuario = await _context.Usuarios.FindAsync(usuarioId);
+                if (usuario == null)
+                {
+                    return new UploadResponse
+                    {
+                        Sucesso = false,
+                        Mensagem = "Usuário não encontrado."
+                    };
+                }
+
                 // Cria o Look
                 var look = new Look
                 {
                     Id = uploadResult.Id,
+                    UsuarioId = usuario.Id,
                     Titulo = roupa.Nome,
                     Descricao = roupa.Categoria,
-                    DataCriacao = DateTime.UtcNow
+                    DataCriacao = DateTime.UtcNow,
+                    Usuario = usuario
                 };
 
                 // Cria a imagem associada ao Look

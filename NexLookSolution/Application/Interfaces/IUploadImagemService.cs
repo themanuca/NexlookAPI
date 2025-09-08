@@ -10,6 +10,6 @@ namespace Application.Interfaces
     public interface IUploadImagemService
     {
         Task<UploadResponse> UploadImagemAsync(RoupaItem roupaItem);
-        Task<UploadResponse> UploadLookAsync(RoupaItem roupa);
+        Task<UploadResponse> UploadLookAsync(RoupaItem roupa, Guid usuarioId);
     }
 }
