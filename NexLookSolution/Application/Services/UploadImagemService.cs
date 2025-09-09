@@ -4,6 +4,7 @@ using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Domain.Models;
 using Infra.dbContext;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
 namespace Application.Services
@@ -150,6 +151,28 @@ namespace Application.Services
                     Mensagem = $"Erro durante o upload: {ex.Message}"
                 };
             }
+        }
+
+        public async Task<List<LookDTO>> BuscarLooksUsuarioAsync(Guid usuarioId)
+        {
+            var looks = await _context.Looks
+                .Include(l => l.Images)
+                .Where(l => l.UsuarioId == usuarioId)
+                .Select(l => new LookDTO
+                {
+                    Id = l.Id,
+                    Titulo = l.Titulo,
+                    Descricao = l.Descricao,
+                    DataCriacao = l.DataCriacao,
+                    Images = l.Images.Select(i => new LookImageDTO
+                    {
+                        Id = i.Id,
+                        ImageUrl = i.ImageUrl
+                    }).ToList()
+                })
+                .ToListAsync();
+
+            return looks;
         }
     }
 }

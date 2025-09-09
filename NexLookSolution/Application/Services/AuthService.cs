@@ -1,3 +1,4 @@
+using Application.DTOs.Auth;
 using Domain.Models;
 using Infra.dbContext;
 using Microsoft.AspNetCore.Identity;
@@ -19,7 +20,7 @@ public class AuthService : IAuthService
         _configuration = configuration;
     }
 
-    public async Task<AuthResponse> LoginAsync(LoginRequest request)
+    public async Task<AuthResponseDto> LoginAsync(LoginRequest request)
     {
         if(string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
         {
@@ -30,7 +31,7 @@ public class AuthService : IAuthService
 
         if (user == null)
         {
-            return new AuthResponse { Sucesso = false, Mensagem = "Usuário não encontrado." };
+            return new AuthResponseDto { Sucesso = false, Mensagem = "Usuário não encontrado." };
         }
 
         var passwordHasher = new PasswordHasher<Usuario>();
@@ -42,15 +43,17 @@ public class AuthService : IAuthService
 
         var token = GenerateJwtToken(user);
 
-        return new AuthResponse 
+        return new AuthResponseDto
         { 
             Sucesso = true, 
             Token = token,
-            Mensagem = "Login realizado com sucesso!" 
+            Name = user.Nome,
+            Email = user.Email,
+            UserId = user.Id
         };
     }
 
-    public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
+    public async Task<AuthResponseDto> RegisterAsync(RegisterRequest request)
     {
         if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
         {
@@ -60,7 +63,7 @@ public class AuthService : IAuthService
         if (await _context.Usuarios.AnyAsync(u => u.Email == request.Email))
         {
 
-            return new AuthResponse { Sucesso = false, Mensagem = "Email já cadastrado." };
+            return new AuthResponseDto { Sucesso = false, Mensagem = "Email já cadastrado." };
         }
         var passwordHasher = new PasswordHasher<Usuario>();
 
@@ -81,11 +84,14 @@ public class AuthService : IAuthService
 
         var token = GenerateJwtToken(user);
 
-        return new AuthResponse 
+        return new AuthResponseDto
         { 
             Sucesso = true, 
             Token = token,
-            Mensagem = "Usuário criado com sucesso!" 
+            Mensagem = "Usuário criado com sucesso!",
+            Name = user.Nome,
+            Email = user.Email,
+            UserId = user.Id
         };
     }
 

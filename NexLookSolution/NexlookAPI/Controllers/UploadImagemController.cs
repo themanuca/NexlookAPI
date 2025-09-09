@@ -28,7 +28,7 @@ namespace NexlookAPI.Controllers
         }
 
 
-        [HttpPost("Uploado Imagem")]
+        [HttpPost("UploadoImagem")]
         public Task<IActionResult> UploadImagem([FromForm] RoupaItem roupaItem)
         {
             var userId = GetUserId();
@@ -44,6 +44,13 @@ namespace NexlookAPI.Controllers
                         return BadRequest(task.Result);
                     }
                 });
+        }
+        [HttpGet("Imagens")]
+        public IActionResult GetAllImages()
+        {
+            var userId = GetUserId();
+            var result = _uploadImagemService.BuscarLooksUsuarioAsync(userId).Result;
+            return Ok(result);
         }
     }
 }

@@ -1,5 +1,7 @@
+using Application.DTOs.Auth;
+
 public interface IAuthService
 {
-    Task<AuthResponse> LoginAsync(LoginRequest request);
-    Task<AuthResponse> RegisterAsync(RegisterRequest request);
+    Task<AuthResponseDto> LoginAsync(LoginRequest request);
+    Task<AuthResponseDto> RegisterAsync(RegisterRequest request);
 }
