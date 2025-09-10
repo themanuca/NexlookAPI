@@ -28,7 +28,7 @@ jobs:
         working-directory: './NexlookSolution'
         
       - name: dotnet publish
-        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+        run: dotnet publish ./NexlookAPI/NexlookAPI.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp"
         working-directory: './NexlookSolution'
         
       - name: Upload artifact for deployment job
@@ -53,6 +53,7 @@ jobs:
         with:
           app-name: 'NexlookAPI'
           slot-name: 'Production'
-          package: .
+          package: ${{env.DOTNET_ROOT}}/myapp
 
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_5D7F0C5EAB3C4DB9BBDA3CDD51C4130A }}
+
