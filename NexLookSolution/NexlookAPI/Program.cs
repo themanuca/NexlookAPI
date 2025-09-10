@@ -13,8 +13,13 @@ using System.Threading.RateLimiting;
 // Desativa o mapeamento automático de claims (ex: sub → nameidentifier)
 AppContext.SetSwitch("Microsoft.AspNetCore.Authentication.JwtBearer.SuppressMapInboundClaims", true);
 
-
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure logging
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+builder.Logging.AddAzureWebAppDiagnostics(); // Add Azure logging
 
 // Add services to the container.
 
@@ -111,30 +116,82 @@ builder.Services.AddRateLimiter(options =>
     };
 });
 var app = builder.Build();
+
+// Global exception handler middleware
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Unhandled exception occurred. Request path: {Path}", context.Request.Path);
+        throw;
+    }
+});
+
 using (var scope = app.Services.CreateScope())
 {
     try
     {
         var services = scope.ServiceProvider;
         var dbContext = services.GetRequiredService<AppDbContext>();
-        dbContext.Database.Migrate();
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        
+        logger.LogInformation("Attempting to apply database migrations");
+        await dbContext.Database.MigrateAsync();
+        logger.LogInformation("Database migrations applied successfully");
+        
+        // Log connection string (masked)
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+        if (connectionString != null)
+        {
+            var maskedConnectionString = connectionString.Contains(";") 
+                ? string.Join(";", connectionString.Split(';').Select(part => 
+                    part.StartsWith("Password=", StringComparison.OrdinalIgnoreCase) 
+                        ? "Password=*****" 
+                        : part))
+                : "Connection string is in unexpected format";
+            logger.LogInformation("Using connection string: {ConnectionString}", maskedConnectionString);
+        }
+        else
+        {
+            logger.LogWarning("Connection string is null!");
+        }
     }
     catch (Exception ex)
     {
-        // Configure logging adequado
         var logger = app.Services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Erro ao aplicar migrations no startup");
+        logger.LogError(ex, "An error occurred while applying migrations or initializing the database");
+        throw; // Rethrow to ensure the application doesn't start with an invalid database state
     }
 }
-app.UseCors("AllowSpecificOrigin");
 
-//if (app.Environment.IsDevelopment())
-//{
-//    app.UseSwagger();
-//    app.UseSwaggerUI();
-//}
-
+//app.UseCors("AllowSpecificOrigin");
+app.UseSwagger();
+app.UseSwaggerUI();
 app.UseHttpsRedirection();
+
+// Add request logging middleware
+app.Use(async (context, next) =>
+{
+    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+    logger.LogInformation("Request {Method} {Path} started at {Time}", 
+        context.Request.Method, 
+        context.Request.Path, 
+        DateTime.UtcNow);
+
+    await next();
+
+    logger.LogInformation("Request {Method} {Path} completed with status {StatusCode} at {Time}",
+        context.Request.Method,
+        context.Request.Path,
+        context.Response.StatusCode,
+        DateTime.UtcNow);
+});
+
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();

@@ -14,43 +14,100 @@ namespace NexlookAPI.Controllers
         private readonly ILogger<UploadImagemController> _logger;
         private readonly IUploadImagemService _uploadImagemService;
 
-        public UploadImagemController(IUploadImagemService uploadImagemService, ILogger<UploadImagemController> logger) // Fix: Specify the generic type for ILogger
+        public UploadImagemController(IUploadImagemService uploadImagemService, ILogger<UploadImagemController> logger)
         {
             _uploadImagemService = uploadImagemService;
             _logger = logger;
         }
+
         private Guid GetUserId()
         {
-            var sub = User.FindFirstValue("codeVerify")
-                      ?? throw new UnauthorizedAccessException("Token JWT inválido ou não contém o claim 'sub'.");
+            try
+            {
+                var sub = User.FindFirstValue("codeVerify");
+                if (string.IsNullOrEmpty(sub))
+                {
+                    _logger.LogError("Token JWT inválido ou não contém o claim 'codeVerify'");
+                    throw new UnauthorizedAccessException("Token JWT inválido ou não contém o claim 'codeVerify'.");
+                }
 
-            return Guid.Parse(sub);
+                return Guid.Parse(sub);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao extrair ID do usuário do token");
+                throw;
+            }
         }
-
 
         [HttpPost("UploadImagem")]
-        public Task<IActionResult> UploadImagem([FromForm] RoupaItem roupaItem)
+        public async Task<IActionResult> UploadImagem([FromForm] RoupaItem roupaItem)
         {
-            var userId = GetUserId();
-            return _uploadImagemService.UploadLookAsync(roupaItem, userId)
-                .ContinueWith<IActionResult>(task =>
+            try
+            {
+                _logger.LogInformation("Iniciando upload de imagem. UserId: {UserId}", GetUserId());
+
+                if (roupaItem == null || roupaItem.File == null)
                 {
-                    if (task.Result.Sucesso)
-                    {
-                        return Ok(task.Result);
-                    }
-                    else
-                    {
-                        return BadRequest(task.Result);
-                    }
-                });
+                    _logger.LogWarning("Tentativa de upload com dados inválidos");
+                    return BadRequest("Dados da roupa ou imagem não fornecidos");
+                }
+
+                _logger.LogInformation("Processando upload de imagem. Tamanho: {Size} bytes",
+                    roupaItem.File.Length);
+
+                var userId = GetUserId();
+                var result = await _uploadImagemService.UploadLookAsync(roupaItem, userId);
+
+                if (result.Sucesso)
+                {
+                    _logger.LogInformation("Upload concluído com sucesso para usuário {UserId}", userId);
+                    return Ok(result);
+                }
+                else
+                {
+                    _logger.LogWarning("Falha no upload para usuário {UserId}. Mensagem: {Message}",
+                        userId, result.Mensagem);
+                    return BadRequest(result);
+                }
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogError(ex, "Erro de autorização durante upload de imagem");
+                return Unauthorized(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro durante upload de imagem");
+                return StatusCode(500, "Ocorreu um erro interno ao processar o upload");
+            }
         }
+
         [HttpGet("Imagens")]
-        public IActionResult GetAllImages()
+        public async Task<IActionResult> GetAllImages()
         {
-            var userId = GetUserId();
-            var result = _uploadImagemService.BuscarLooksUsuarioAsync(userId).Result;
-            return Ok(result);
+            try
+            {
+                _logger.LogInformation("Iniciando busca de imagens. UserId: {UserId}", GetUserId());
+
+                var userId = GetUserId();
+                var result = await _uploadImagemService.BuscarLooksUsuarioAsync(userId);
+
+                _logger.LogInformation("Busca de imagens concluída para usuário {UserId}. Total de imagens: {Count}",
+                    userId, result?.Count() ?? 0);
+
+                return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogError(ex, "Erro de autorização durante busca de imagens");
+                return Unauthorized(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro durante busca de imagens");
+                return StatusCode(500, "Ocorreu um erro interno ao buscar as imagens");
+            }
         }
     }
 }
