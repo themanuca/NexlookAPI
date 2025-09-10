@@ -28,7 +28,7 @@ namespace NexlookAPI.Controllers
         }
 
 
-        [HttpPost("UploadoImagem")]
+        [HttpPost("UploadImagem")]
         public Task<IActionResult> UploadImagem([FromForm] RoupaItem roupaItem)
         {
             var userId = GetUserId();

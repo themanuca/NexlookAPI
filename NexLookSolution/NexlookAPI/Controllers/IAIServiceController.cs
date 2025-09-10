@@ -26,12 +26,20 @@ namespace NexlookAPI.Controllers
         }
 
 
-        [HttpPost("Gerar Descrição Imagem")]
-        public async Task<IActionResult> GerarDescricaoImagem([FromBody] List<ClothingItemDTO> looks, string promptUsuario)
+        [HttpPost("GerarDescricaoImagem")]
+        public async Task<IActionResult> GerarDescricaoImagem([FromBody] GerarDescricaoImagemRequest prompt)
         {
             var userId = GetUserId();
 
-            var descricao = await _iaIService.GerarDescricaoImagemAsync(looks, promptUsuario);
+            var descricao = await _iaIService.GerarDescricaoImagemAsync(userId, prompt.PromptUsuario);
+            return Ok(new { Descricao = descricao });
+        }
+        [HttpPost("GerarDescricaoImagemcomFoto")]
+        public async Task<IActionResult> GerarDescricaoImagemComFoto([FromBody] GerarDescricaoImagemRequest prompt)
+        {
+            var userId = GetUserId();
+
+            var descricao = await _iaIService.GerarDescricaoImagemcomFOTOAsync(userId, prompt.PromptUsuario);
             return Ok(new { Descricao = descricao });
         }
     }

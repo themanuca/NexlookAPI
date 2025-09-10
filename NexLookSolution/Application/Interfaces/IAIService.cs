@@ -9,6 +9,7 @@ namespace Application.Interfaces
 {
     public interface IAIService
     {
-        Task<string> GerarDescricaoImagemAsync(List<ClothingItemDTO> looks, string prompt);
+        Task<string> GerarDescricaoImagemAsync(Guid usuarioId, string prompt);
+        Task<LookResponse?> GerarDescricaoImagemcomFOTOAsync(Guid usuarioId, string promptUsuario);
     }
 }

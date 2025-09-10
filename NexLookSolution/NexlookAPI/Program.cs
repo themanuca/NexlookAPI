@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces;
 using Application.Services;
+using Application.Services.IAService;
 using Infra.dbContext;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -42,6 +43,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IUploadImagemService, UploadImagemService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAIService, IAservice>();
 builder.Services.AddAuthorization();
 
 // Adicione esta configuração do CORS
@@ -51,7 +53,7 @@ builder.Services.AddCors(options =>
         builder =>
         {
             builder
-                .WithOrigins("http://localhost:3000") // URL do seu frontend
+                .WithOrigins("http://localhost:3000","http://localhost:5173") // URL do seu frontend
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 .AllowCredentials();

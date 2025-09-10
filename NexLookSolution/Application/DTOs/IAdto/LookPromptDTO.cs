@@ -11,20 +11,22 @@ namespace Application.DTOs.IAdto
     {
         public class ClothingItemDTO
         {
-            [Required]
-            public string Id { get; set; }
+            public string? Id { get; set; }
 
-            [Required]
-            [StringLength(100)]
-            public string Nome { get; set; }
+            public string? Nome { get; set; }
 
-            [Required]
-            public string Categoria { get; set; }
+            public string? Categoria { get; set; }
 
-            [Required]
-            public string Imagem { get; set; }
+            public string? Imagem { get; set; }
         }
-
+        public class LookResponse
+        {
+            public string Ocasiao { get; set; } = string.Empty;
+            public string DescricaoIA { get; set; } = string.Empty;
+            public List<ClothingItemDTO> Look { get; set; } = new();
+            public string Calcado { get; set; } = string.Empty;
+            public string Acessorio { get; set; } = string.Empty;
+        }
         public class RecommendationRequestDTO
         {
             [Required]
