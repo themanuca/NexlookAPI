@@ -58,7 +58,7 @@ builder.Services.AddCors(options =>
         builder =>
         {
             builder
-                .WithOrigins("http://localhost:3000","http://localhost:5173") // URL do seu frontend
+                .WithOrigins("http://localhost:3000","http://localhost:5173", "https://nexlook-app.vercel.app") // URL do seu frontend
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 .AllowCredentials();
