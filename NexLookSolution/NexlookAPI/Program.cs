@@ -28,7 +28,14 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
+     sqlServerOptionsAction: sqlOptions =>
+     {
+         sqlOptions.EnableRetryOnFailure(
+             maxRetryCount: 5,
+             maxRetryDelay: TimeSpan.FromSeconds(30),
+             errorNumbersToAdd: null);
+     }));
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -169,10 +176,10 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-//app.UseCors("AllowSpecificOrigin");
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseHttpsRedirection();
+app.UseCors("AllowSpecificOrigin");
 
 // Add request logging middleware
 app.Use(async (context, next) =>
