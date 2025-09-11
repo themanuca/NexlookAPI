@@ -22,7 +22,7 @@ jobs:
         working-directory: ./NexLookSolution
 
       - name: dotnet publish
-        run: dotnet publish ./NexlookAPI/NexlookAPI.csproj -c Release -o ../../publish
+        run: dotnet publish ./NexlookAPI/NexlookAPI.csproj -c Release -o ./publish
         working-directory: ./NexLookSolution
 
       - name: Upload publish artifact
@@ -47,3 +47,4 @@ jobs:
           slot-name: 'Production'
           package: ./.net-app
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_5D7F0C5EAB3C4DB9BBDA3CDD51C4130A }}
+
