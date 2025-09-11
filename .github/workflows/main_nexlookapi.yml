@@ -22,7 +22,7 @@ jobs:
         run: dotnet restore ./NexLookSolution/NexlookAPI/NexlookAPI.csproj
 
       - name: Build with dotnet
-        run: dotnet build ./NexLookSolution/NexlookAPI/NexlookAPI.csproj --configuration Release --no-restore
+        run: dotnet build ./NexLookSolution/NexlookAPI/NexlookAPI.csproj --configuration Release --no-restore --runtime win-x86
 
       - name: Publish with dotnet (self-contained)
         run: dotnet publish ./NexLookSolution/NexlookAPI/NexlookAPI.csproj -c Release --runtime win-x86 --self-contained true -o ./publish -p:CopyLocalLockFileAssemblies=true -p:PublishSingleFile=false --no-restore --no-build
