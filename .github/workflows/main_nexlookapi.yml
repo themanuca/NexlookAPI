@@ -17,19 +17,21 @@ jobs:
         with:
           dotnet-version: '8.x'
 
-      - name: Build with dotnet
-        run: dotnet build --configuration Release
-        working-directory: ./NexLookSolution
+      - name: Restore dependencies
+        run: dotnet restore ./NexLookSolution/NexlookAPI/NexlookAPI.csproj
 
-      - name: dotnet publish
-        run: dotnet publish ./NexlookAPI/NexlookAPI.csproj -c Release -o "./myapp" -p:CopyLocalLockFileAssemblies=true -p:PublishSingleFile=false
-        working-directory: ./NexLookSolution
+      - name: Build with dotnet
+        run: dotnet build ./NexLookSolution/NexlookAPI/NexlookAPI.csproj --configuration Release --no-restore
+
+      - name: Publish with dotnet
+        run: dotnet publish ./NexLookSolution/NexlookAPI/NexlookAPI.csproj -c Release -o ./publish -p:CopyLocalLockFileAssemblies=true -p:PublishSingleFile=false --no-restore --no-build
 
       - name: Upload publish artifact
         uses: actions/upload-artifact@v4
         with:
           name: .net-app
-          path: NexLookSolution/myapp
+          path: ./publish
+
   deploy:
     runs-on: windows-latest
     needs: build
@@ -38,21 +40,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: .net-app
-          path: myapp
+          path: ./publish
 
-     
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'NexlookAPI'
           slot-name: 'Production'
-          package: myapp
+          package: ./publish
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_5D7F0C5EAB3C4DB9BBDA3CDD51C4130A }}
-
-
-
-
-
-
-
-
