@@ -19,13 +19,13 @@ jobs:
         dotnet-version: '8.x'
 
     - name: Restore dependencies
-      run: dotnet restore ./NexLookSolution/NexlookAPI/NexlookAPI.csproj
+      run: dotnet restore ./NexLookSolution/NexlookAPI/NexlookAPI.csproj --runtime win-x86
 
     - name: Build with dotnet
-      run: dotnet build ./NexLookSolution/NexlookAPI/NexlookAPI.csproj --configuration Release --no-restore
+      run: dotnet build ./NexLookSolution/NexlookAPI/NexlookAPI.csproj --configuration Release --no-restore --runtime win-x86
 
-    - name: Publish with dotnet
-      run: dotnet publish ./NexLookSolution/NexlookAPI/NexlookAPI.csproj -c Release -o ./publish -p:CopyLocalLockFileAssemblies=true -p:PublishSingleFile=false --no-restore --no-build
+    - name: Publish with dotnet (self-contained)
+      run: dotnet publish ./NexLookSolution/NexlookAPI/NexlookAPI.csproj -c Release --runtime win-x86 --self-contained true -o ./publish --no-restore --no-build
 
     - name: Upload publish artifact
       uses: actions/upload-artifact@v4
