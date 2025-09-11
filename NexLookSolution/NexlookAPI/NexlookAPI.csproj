@@ -20,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Application\Application.csproj" />
     <ProjectReference Include="..\Infra\Infra.csproj" />
+	<None Update="NexlookAPI.runtimeconfig.template.json" CopyToOutputDirectory="Always" />
   </ItemGroup>
 
 </Project>
