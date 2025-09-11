@@ -40,6 +40,9 @@ jobs:
         with:
           name: .net-app
 
+      - name: Publish .NET Core app
+        run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
+
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
@@ -47,5 +50,6 @@ jobs:
           slot-name: 'Production'
           package: ${{env.DOTNET_ROOT}}/myapp
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_5D7F0C5EAB3C4DB9BBDA3CDD51C4130A }}
+
 
 
