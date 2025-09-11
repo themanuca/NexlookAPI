@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -23,8 +24,8 @@ jobs:
       - name: Build with dotnet
         run: dotnet build ./NexLookSolution/NexlookAPI/NexlookAPI.csproj --configuration Release --no-restore
 
-      - name: Publish with dotnet
-        run: dotnet publish ./NexLookSolution/NexlookAPI/NexlookAPI.csproj -c Release -o ./publish -p:CopyLocalLockFileAssemblies=true -p:PublishSingleFile=false --no-restore --no-build
+      - name: Publish with dotnet (self-contained)
+        run: dotnet publish ./NexLookSolution/NexlookAPI/NexlookAPI.csproj -c Release --runtime win-x86 --self-contained true -o ./publish -p:CopyLocalLockFileAssemblies=true -p:PublishSingleFile=false --no-restore --no-build
 
       - name: Upload publish artifact
         uses: actions/upload-artifact@v4
@@ -35,6 +36,7 @@ jobs:
   deploy:
     runs-on: windows-latest
     needs: build
+
     steps:
       - name: Download publish artifact
         uses: actions/download-artifact@v4
@@ -49,3 +51,4 @@ jobs:
           slot-name: 'Production'
           package: ./publish
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_5D7F0C5EAB3C4DB9BBDA3CDD51C4130A }}
+
