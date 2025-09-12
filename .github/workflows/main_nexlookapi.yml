@@ -18,14 +18,16 @@ jobs:
       with:
         dotnet-version: '8.x'
 
+    # Forçar restore limpo (sem cache)
     - name: Restore dependencies
       run: dotnet restore ./NexLookSolution/NexlookAPI/NexlookAPI.csproj --runtime win-x86
 
     - name: Build with dotnet
       run: dotnet build ./NexLookSolution/NexlookAPI/NexlookAPI.csproj --configuration Release --no-restore --runtime win-x86
 
-    - name: Publish with dotnet (self-contained)
-      run: dotnet publish ./NexLookSolution/NexlookAPI/NexlookAPI.csproj -c Release --runtime win-x86 --self-contained true -o ./publish --no-restore --no-build
+    # Publicar em win-x64 (compatível com Azure App Service)
+    - name: Publish with dotnet
+      run: dotnet publish ./NexLookSolution/NexlookAPI/NexlookAPI.csproj -c Release -r win-x86 --self-contained false -o ./publish --no-restore
 
     - name: Upload publish artifact
       uses: actions/upload-artifact@v4
@@ -49,9 +51,13 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+    # Adicionar parâmetro para limpar antes do deploy
     - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v3
       with:
         app-name: 'NexlookAPI'
         slot-name: 'Production'
         package: ./publish
+        clean: true
+
+
