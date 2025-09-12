@@ -20,10 +20,10 @@ jobs:
 
     # Forçar restore limpo (sem cache)
     - name: Restore dependencies
-      run: dotnet restore ./NexLookSolution/NexlookAPI/NexlookAPI.csproj --force --no-cache
+      run: dotnet restore ./NexLookSolution/NexlookAPI/NexlookAPI.csproj --runtime win-x86
 
     - name: Build with dotnet
-      run: dotnet build ./NexLookSolution/NexlookAPI/NexlookAPI.csproj --configuration Release --no-restore
+      run: dotnet build ./NexLookSolution/NexlookAPI/NexlookAPI.csproj --configuration Release --no-restore --runtime win-x86
 
     # Publicar em win-x64 (compatível com Azure App Service)
     - name: Publish with dotnet
@@ -59,4 +59,5 @@ jobs:
         slot-name: 'Production'
         package: ./publish
         clean: true
+
 
