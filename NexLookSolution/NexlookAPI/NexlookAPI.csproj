@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
-
+		
   <ItemGroup>
     <PackageReference Include="CloudinaryDotNet" Version="1.27.7" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.20" />
@@ -23,4 +23,11 @@
 	<None Update="NexlookAPI.runtimeconfig.template.json" CopyToOutputDirectory="Always" />
   </ItemGroup>
 
+	<Target Name="ChangeAliasesOfStronglyReferencedAssemblies" BeforeTargets="FindReferenceAssembliesForReferences">
+		<ItemGroup>
+			<ReferencePath Condition="'%(FileName)' == 'System.IdentityModel.Tokens.Jwt'">
+				<Aliases>global</Aliases>
+			</ReferencePath>
+		</ItemGroup>
+	</Target>
 </Project>
