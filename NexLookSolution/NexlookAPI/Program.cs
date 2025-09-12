@@ -141,40 +141,32 @@ app.Use(async (context, next) =>
 
 using (var scope = app.Services.CreateScope())
 {
+    var services = scope.ServiceProvider;
+    var dbContext = services.GetRequiredService<AppDbContext>();
+    var logger = services.GetRequiredService<ILogger<Program>>();
+
     try
     {
-        var services = scope.ServiceProvider;
-        var dbContext = services.GetRequiredService<AppDbContext>();
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        
-        logger.LogInformation("Attempting to apply database migrations");
-        await dbContext.Database.MigrateAsync();
-        logger.LogInformation("Database migrations applied successfully");
-        
-        // Log connection string (masked)
-        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-        if (connectionString != null)
+        logger.LogInformation("Atenção, aplicando migrations");
+
+        // Timeout para evitar travar startup
+        var migrateTask = dbContext.Database.MigrateAsync();
+        if (await Task.WhenAny(migrateTask, Task.Delay(TimeSpan.FromSeconds(30))) == migrateTask)
         {
-            var maskedConnectionString = connectionString.Contains(";") 
-                ? string.Join(";", connectionString.Split(';').Select(part => 
-                    part.StartsWith("Password=", StringComparison.OrdinalIgnoreCase) 
-                        ? "Password=*****" 
-                        : part))
-                : "Connection string is in unexpected format";
-            logger.LogInformation("Using connection string: {ConnectionString}", maskedConnectionString);
+            logger.LogInformation("Database migrations aplicada com sucesso");
         }
         else
         {
-            logger.LogWarning("Connection string is null!");
+            logger.LogWarning("Migration atenção: timed out. Skipping migrations for now.");
         }
     }
     catch (Exception ex)
     {
-        var logger = app.Services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while applying migrations or initializing the database");
-        throw; // Rethrow to ensure the application doesn't start with an invalid database state
+        logger.LogError(ex, "Falha ao aplicar migrations. The app will continue running.");
+        // ❌ NÃO dar throw, assim o App continua rodando mesmo se o SQL estiver temporariamente fora
     }
 }
+
 
 app.UseSwagger();
 app.UseSwaggerUI();
