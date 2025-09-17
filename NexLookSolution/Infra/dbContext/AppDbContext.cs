@@ -53,10 +53,25 @@ namespace Infra.dbContext
                 .HasForeignKey(p => p.SubscricaoId);
 
             // Look - LookImage
-            modelBuilder.Entity<LookImage>()
-                .HasOne(li => li.Look)
-                .WithMany(l => l.Images)
-                .HasForeignKey(li => li.LookId);
+            modelBuilder.Entity<LookImage>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.ImageUrl)
+                    .IsRequired();
+
+                // Configurando as novas propriedades
+                entity.Property(e => e.PublicIdCloudnary)
+                    .HasMaxLength(255); // Ajuste o tamanho conforme necessário
+
+                entity.Property(e => e.PublicIdFirebase)
+                    .HasMaxLength(255); // Ajuste o tamanho conforme necessário
+
+                entity.HasOne(e => e.Look)
+                    .WithMany(e => e.Images)
+                    .HasForeignKey(e => e.LookId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
 
             base.OnModelCreating(modelBuilder);
         }
