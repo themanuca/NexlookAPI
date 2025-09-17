@@ -22,30 +22,26 @@ namespace Application.Services.IAService
         private readonly string _apiKey;
         private readonly IUploadImagemService _uploadImagemService;
         private readonly ILogger<IAservice> _logger;
-        private readonly string promptJsonSystem = @"
-                            Você é um consultor de moda. Analise as roupas e retorne APENAS um JSON válido no seguinte formato:
-                            {
-                                ""ocasiao"": ""texto da ocasião"",
-                                ""descricaoIA"": ""breve explicação"",
-                                ""look"": [
-                                    {
-                                        ""id"": ""id da peça"",
-                                        ""nome"": ""nome da peça"",
-                                        ""categoria"": ""categoria da peça"",
-                                        ""imagem"": ""url da imagem""
-                                    }
-                                ],
-                                ""calcado"": ""sugestão de calçado"",
-                                ""acessorio"": ""sugestão de acessório""
-                            }
+        private readonly string _promptSystem = @"
+                        Você é um consultor de moda objetivo. 
+                        Analise as roupas enviadas e sugira UMA combinação principal de look para a ocasião informada. 
 
-                            IMPORTANTE:
-                            - Retorne APENAS o JSON, sem explicações adicionais
-                            - Não use acentos ou caracteres especiais
-                            - Não inclua comentários no JSON
-                            - Não use formatação markdown
-                            - Mantenha as chaves exatamente como mostrado
-                            ";
+                        IMPORTANTE: Retorne APENAS o JSON válido, sem formatação markdown, sem prefixos como 'json' ou '```'.
+
+                        Formato EXATO da resposta:
+                        {
+                          ""ocasiao"": ""texto da ocasião"",
+                          ""descricaoIA"": ""Uma breve explicação"",
+                          ""look"": [
+                            { ""id"": ""id recebido"", ""nome"": ""nome recebido"", ""categoria"": ""categoria recebida"", ""imagem"": ""url recebida"" }
+                          ],
+                          ""calcado"": ""sugestão de calçado"",
+                          ""acessorio"": ""sugestão de acessório""
+                        }
+
+                        Use exatamente os valores de id, nome, categoria e url fornecidos pelo usuário, sem inventar.
+                        Não adicione explicações, comentários ou formatação antes ou depois do JSON.
+                        ";
         public IAservice(AppDbContext context, IConfiguration configuration, IHttpClientFactory httpClientFactory, IUploadImagemService upload, ILogger<IAservice> logger)
         {
             _context = context;
@@ -94,7 +90,7 @@ namespace Application.Services.IAService
                 {
                     new {
                         role = "system",
-                        content = promptJsonSystem
+                        content = _promptSystem
                     },
                     new {
                         role = "user",
@@ -178,28 +174,6 @@ namespace Application.Services.IAService
 
                 promptUsuario = SanitizarPrompt(promptUsuario);
 
-                // Prompt estruturado para forçar JSON
-                var promptSystem = @"
-                        Você é um consultor de moda objetivo. 
-                        Analise as roupas enviadas (imagens) e sugira UMA combinação principal de look para a ocasião informada. 
-
-                        Regras:
-                        - Responda SEMPRE em JSON válido, no formato:
-                        - Use exatamente os valores de id, nome, categoria e url fornecidos pelo usuário, sem inventar.
-                        - Não use placeholders como ""URL_da_imagem..."".
-                        - Não inclua nada fora do JSON.
-                        {
-                          ""ocasiao"": ""<texto da ocasião>"",
-                          ""descricaoIA"":""<Uma breve explicação>"",
-                          ""look"": [
-                            { ""id"": ""<id recebido>"", ""nome"": ""<nome recebido>"", ""categoria"": ""<categoria recebida>"", ""imagem"": ""<url recebida>"" }
-                          ],
-                          ""calcado"": ""<sugestão de calçado>"",
-                          ""acessorio"": ""<sugestão de acessório>""
-                        }
-
-                        Não inclua nada fora do JSON, nem explicações adicionais.
-                        ";
 
                 // Montar mensagens
                 var userContent = new List<object>
@@ -214,7 +188,7 @@ namespace Application.Services.IAService
 
                 var messages = new List<object>
                 {
-                    new { role = "system", content = promptSystem },
+                    new { role = "system", content = _promptSystem },
                     new { role = "user", content = userContent }
                 };
 
@@ -265,10 +239,44 @@ namespace Application.Services.IAService
                                            .TrimEnd('`')
                                            .Trim();
 
-                    // Verificar se o conteúdo parece ser JSON
+                    // Remover blocos de código em markdown (```json, ```, etc.)
+                    if (jsonContent.StartsWith("```"))
+                    {
+                        var lines = jsonContent.Split('\n');
+                        if (lines.Length > 2)
+                        {
+                            // Remove primeira e última linha (que contêm ```
+                            jsonContent = string.Join('\n', lines.Skip(1).Take(lines.Length - 2));
+                        }
+                    }
+
+                    // Remover prefixos comuns
+                    var prefixesToRemove = new[] { "json", "JSON", "javascript", "js" };
+                    foreach (var prefix in prefixesToRemove)
+                    {
+                        if (jsonContent.TrimStart().StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                        {
+                            var startIndex = jsonContent.IndexOf(prefix, StringComparison.OrdinalIgnoreCase) + prefix.Length;
+                            jsonContent = jsonContent.Substring(startIndex);
+                        }
+                    }
+
+                    // Encontrar o primeiro { e o último }
+                    var firstBrace = jsonContent.IndexOf('{');
+                    var lastBrace = jsonContent.LastIndexOf('}');
+                    
+                    if (firstBrace >= 0 && lastBrace > firstBrace)
+                    {
+                        jsonContent = jsonContent.Substring(firstBrace, lastBrace - firstBrace + 1);
+                    }
+
+                    // Log do conteúdo após limpeza
+                    _logger.LogDebug("JSON após limpeza: {JsonContent}", jsonContent);
+
+                    // Verificar se o conteúdo agora é um JSON válido
                     if (!jsonContent.StartsWith("{") || !jsonContent.EndsWith("}"))
                     {
-                        _logger.LogWarning("Resposta não está no formato JSON esperado: {Content}", jsonContent);
+                        _logger.LogWarning("Resposta não está no formato JSON esperado após limpeza: {Content}", jsonContent);
                         return null;
                     }
 
@@ -281,7 +289,7 @@ namespace Application.Services.IAService
                         NumberHandling = JsonNumberHandling.AllowReadingFromString
                     };
 
-                    _logger.LogDebug("Tentando desserializar JSON: {JsonContent}", jsonContent);
+                    _logger.LogDebug("Tentando desserializar JSON limpo: {JsonContent}", jsonContent);
 
                     var lookResponse = JsonSerializer.Deserialize<LookResponse>(jsonContent, options);
 
@@ -306,9 +314,11 @@ namespace Application.Services.IAService
                 {
                     _logger.LogError(ex, "Erro ao desserializar resposta. Conteúdo: {Content}", jsonContent);
 
-                    // Log detalhado para debug
-                    _logger.LogDebug("Caracteres no início do conteúdo: {Start}",
-                        string.Join(" ", jsonContent.Take(20).Select(c => ((int)c).ToString("X2"))));
+                    // Log detalhado para debug - primeiros e últimos caracteres
+                    _logger.LogDebug("Primeiros 50 caracteres: {Start}", 
+                        string.Join(" ", jsonContent.Take(50).Select(c => $"'{c}'({(int)c})")));
+                    _logger.LogDebug("Últimos 50 caracteres: {End}", 
+                        string.Join(" ", jsonContent.TakeLast(50).Select(c => $"'{c}'({(int)c})")));
 
                     return null;
                 }
