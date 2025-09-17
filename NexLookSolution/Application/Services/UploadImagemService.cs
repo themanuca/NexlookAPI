@@ -14,7 +14,8 @@ namespace Application.Services
         private readonly Cloudinary _cloudinary;
         private readonly string _uploadPreset;
         private readonly AppDbContext _context;
-        public UploadImagemService(IConfiguration configuration, AppDbContext context)
+        private readonly IStorageService _storageService;
+        public UploadImagemService(IConfiguration configuration, AppDbContext context, IStorageService storage)
         {
             var account = new Account(
                 configuration["Storage:CLOUDINARY_CLOUD_NAME"],
@@ -24,6 +25,7 @@ namespace Application.Services
             _cloudinary = new Cloudinary(account);
             _uploadPreset = configuration["Storage:CLOUDINARY_UPLOAD_PRESET"];
             _context = context;
+            _storageService  = storage;
         }
 
         public async Task<UploadResponse> UploadLookAsync(RoupaItem roupa, Guid usuarioId)
@@ -34,6 +36,16 @@ namespace Application.Services
                 {
                     Sucesso = false,
                     Mensagem = "Nenhuma imagem fornecida."
+                };
+            }
+
+            var isImagemMax = BuscarLooksUsuarioAsync(usuarioId).Result.Count >= 15;
+            if (isImagemMax)
+            {
+                return new UploadResponse
+                {
+                    Sucesso = false,
+                    Mensagem = "Número máximo de looks atingido. Exclua alguns looks para adicionar novos."
                 };
             }
             try
@@ -80,6 +92,8 @@ namespace Application.Services
                     LookId = look.Id,
                     Id = Guid.NewGuid(),
                     ImageUrl = uploadResult.ImageUrl,
+                    PublicIdCloudnary = uploadResult.PublicIdCloudnary,
+                    PublicIdFirebase = uploadResult.PublicIdFirebase,
                     Look = look
                 };
 
@@ -121,11 +135,18 @@ namespace Application.Services
                 var uploadParams = new ImageUploadParams
                 {
                     File = new FileDescription(roupaItem.File.FileName, stream),
-                    UploadPreset = _uploadPreset
+                    UploadPreset = _uploadPreset,
+                    // Adicionar transformações para otimizar a imagem
+                    Transformation = new Transformation()
+                        .Quality("auto") // Qualidade automática
+                        .FetchFormat("auto") // Formato automático (WebP quando possível)
+                        .Width(1200) // Largura máxima
+                        .Height(1200) // Altura máxima
+                        .Crop("limit") // Redimensiona mantendo proporção
+                        .ColorSpace("srgb")
                 };
 
                 var uploadResult = await _cloudinary.UploadAsync(uploadParams);
-
                 if (uploadResult.Error != null)
                 {
                     return new UploadResponse
@@ -140,6 +161,7 @@ namespace Application.Services
                     Sucesso = true,
                     ImageUrl = uploadResult.SecureUrl.ToString(),
                     Id = Guid.NewGuid(),
+                    PublicIdCloudnary = uploadResult.PublicId,
                     Mensagem = "Upload realizado com sucesso!"
                 };
             }
@@ -171,8 +193,50 @@ namespace Application.Services
                     }).ToList()
                 })
                 .ToListAsync();
-
             return looks;
+        }
+        public async Task<DeleteResponse> ExcluirLookAsync(Guid lookId, Guid usuarioId)
+        {
+            var look = await _context.Looks
+                .Include(l => l.Images)
+                .FirstOrDefaultAsync(l => l.Id == lookId && l.UsuarioId == usuarioId);
+            if (look == null)
+            {
+                return new DeleteResponse
+                {
+                    Sucesso = false,
+                    Mensagem = "Look não encontrado ou não pertence ao usuário."
+                };
+            }
+            foreach (var image in look.Images)
+            {
+                if (image?.PublicIdFirebase?.Length > 0)
+                {
+
+                }else if(image?.PublicIdCloudnary?.Length > 0)
+                {
+                    var result = await _storageService.DeleteAsync(image.PublicIdCloudnary);
+                    if(!result)
+                    {
+                        return new DeleteResponse
+                        {
+                            Sucesso = false,
+                            Mensagem = "Falha ao excluir imagem do Cloudinary."
+                        };
+                    }
+
+                }
+
+            }
+            _context.LookImages.RemoveRange(look.Images);
+            // Remove o look
+            _context.Looks.Remove(look);
+            await _context.SaveChangesAsync();
+            return new DeleteResponse
+            {
+                Sucesso = true,
+                Mensagem = "Look e imagens excluídos com sucesso."
+            };    
         }
     }
 }

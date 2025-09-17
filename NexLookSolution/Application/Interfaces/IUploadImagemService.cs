@@ -12,5 +12,6 @@ namespace Application.Interfaces
         Task<UploadResponse> UploadImagemAsync(RoupaItem roupaItem);
         Task<UploadResponse> UploadLookAsync(RoupaItem roupa, Guid usuarioId);
         Task<List<LookDTO>> BuscarLooksUsuarioAsync(Guid usuarioId);
+        Task<DeleteResponse> ExcluirLookAsync(Guid lookId, Guid usuarioId);
     }
 }

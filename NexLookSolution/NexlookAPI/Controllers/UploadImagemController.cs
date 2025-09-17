@@ -109,5 +109,36 @@ namespace NexlookAPI.Controllers
                 return StatusCode(500, "Ocorreu um erro interno ao buscar as imagens");
             }
         }
+        [HttpDelete("ExcluirLook/{lookId}")]
+        public async Task<IActionResult> ExcluirLook(Guid lookId)
+        {
+            try
+            {
+                _logger.LogInformation("Iniciando exclusão de look. LookId: {LookId}, UserId: {UserId}", lookId, GetUserId());
+                var userId = GetUserId();
+                var result = await _uploadImagemService.ExcluirLookAsync(lookId, userId);
+                if (result.Sucesso)
+                {
+                    _logger.LogInformation("Exclusão de look concluída com sucesso. LookId: {LookId}, UserId: {UserId}", lookId, userId);
+                    return Ok(result);
+                }
+                else
+                {
+                    _logger.LogWarning("Falha na exclusão de look. LookId: {LookId}, UserId: {UserId}, Mensagem: {Message}",
+                        lookId, userId, result.Mensagem);
+                    return BadRequest(result);
+                }
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogError(ex, "Erro de autorização durante exclusão de look");
+                return Unauthorized(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro durante exclusão de look");
+                return StatusCode(500, "Ocorreu um erro interno ao processar a exclusão do look");
+            }
+        }
     }
 }

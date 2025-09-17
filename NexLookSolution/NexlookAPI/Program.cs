@@ -56,6 +56,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddScoped<IUploadImagemService, UploadImagemService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAIService, IAservice>();
+builder.Services.AddScoped<IStorageService, CloudinaryStorageService>();
 builder.Services.AddAuthorization();
 
 // Adicione esta configuração do CORS
@@ -147,23 +148,48 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        logger.LogInformation("Atenção, aplicando migrations");
+        logger.LogInformation("Verificando pending migrations...");
 
-        // Timeout para evitar travar startup
-        var migrateTask = dbContext.Database.MigrateAsync();
-        if (await Task.WhenAny(migrateTask, Task.Delay(TimeSpan.FromSeconds(30))) == migrateTask)
+        // Verifica se existem migrations pendentes
+        var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
+        var pendingList = pendingMigrations.ToList();
+
+        if (pendingList.Any())
         {
-            logger.LogInformation("Database migrations aplicada com sucesso");
+            logger.LogInformation("Encontradas {Count} migrations pendentes: {Migrations}",
+                pendingList.Count,
+                string.Join(", ", pendingList));
+
+            // Timeout para evitar travar startup
+            var migrateTask = dbContext.Database.MigrateAsync();
+            if (await Task.WhenAny(migrateTask, Task.Delay(TimeSpan.FromSeconds(30))) == migrateTask)
+            {
+                logger.LogInformation("Migrations aplicadas com sucesso");
+            }
+            else
+            {
+                logger.LogWarning("Migration timeout: processo será tentado novamente no próximo restart");
+            }
         }
         else
         {
-            logger.LogWarning("Migration atenção: timed out. Skipping migrations for now.");
+            logger.LogInformation("Banco de dados está atualizado, nenhuma migration pendente");
+        }
+
+        // Verifica conexão com o banco
+        var canConnect = await dbContext.Database.CanConnectAsync();
+        if (!canConnect)
+        {
+            logger.LogError("Não foi possível estabelecer conexão com o banco de dados");
+        }
+        else
+        {
+            logger.LogInformation("Conexão com o banco de dados estabelecida com sucesso");
         }
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Falha ao aplicar migrations. The app will continue running.");
-        // ❌ NÃO dar throw, assim o App continua rodando mesmo se o SQL estiver temporariamente fora
+        logger.LogError(ex, "Erro durante verificação/aplicação de migrations");
     }
 }
 

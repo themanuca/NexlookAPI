@@ -6,13 +6,9 @@ using System.Threading.Tasks;
 
 namespace Application.DTOs
 {
-    public class UploadResponse
+    public class DeleteResponse
     {
-        public string ImageUrl { get; set; }
-        public Guid Id { get; set; }
         public bool Sucesso { get; set; }
         public string Mensagem { get; set; }
-        public string? PublicIdCloudnary { get; set; }
-        public string? PublicIdFirebase { get; set; }
     }
 }
