@@ -40,39 +40,7 @@ namespace NexlookAPI.Controllers
             }
         }
 
-        [HttpPost("GerarDescricaoImagem")]
-        public async Task<IActionResult> GerarDescricaoImagem([FromBody] GerarDescricaoImagemRequest prompt)
-        {
-            try
-            {
-                _logger.LogInformation("Iniciando geração de descrição de imagem. UserId: {UserId}", GetUserId());
-                
-                if (prompt == null || string.IsNullOrWhiteSpace(prompt.PromptUsuario))
-                {
-                    _logger.LogWarning("Prompt inválido recebido");
-                    return BadRequest("O prompt não pode estar vazio");
-                }
-
-                var userId = GetUserId();
-                _logger.LogInformation("Processando prompt para usuário {UserId}. Prompt: {Prompt}", userId, prompt.PromptUsuario);
-
-                var descricao = await _iaIService.GerarDescricaoImagemAsync(userId, prompt.PromptUsuario);
-                
-                _logger.LogInformation("Descrição gerada com sucesso para usuário {UserId}", userId);
-                return Ok(new { Descricao = descricao });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                _logger.LogError(ex, "Erro de autorização ao gerar descrição");
-                return Unauthorized(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Erro ao gerar descrição de imagem");
-                return StatusCode(500, "Ocorreu um erro interno ao processar sua solicitação");
-            }
-        }
-
+        
         [HttpPost("GerarDescricaoImagemcomFoto")]
         public async Task<IActionResult> GerarDescricaoImagemComFoto([FromBody] GerarDescricaoImagemRequest prompt)
         {
