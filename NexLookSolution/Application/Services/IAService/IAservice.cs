@@ -534,18 +534,18 @@ namespace Application.Services.IAService
             return $"Erro: {responseContent}";
         }
 
-        private async Task<bool> VerificarPlanoAtivo(Guid usuarioId)
-        {
-            try
-            {
-                var usuario = await _context.Usuarios.FindAsync(usuarioId);
-                var plano = 
-                return usuario != null;
-            }
-            catch (Exception ex) 
-            { 
+        //private async Task<bool> VerificarPlanoAtivo(Guid usuarioId)
+        //{
+        //    try
+        //    {
+        //        var usuario = await _context.Usuarios.FindAsync(usuarioId);
+        //        var plano = 
+        //        return usuario != null;
+        //    }
+        //    catch (Exception ex) 
+        //    { 
             
-            }
-        }
+        //    }
+        //}
     }
 }
