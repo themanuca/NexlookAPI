@@ -11,5 +11,6 @@ namespace Application.Interfaces
     {
         Task<string> GerarDescricaoImagemAsync(Guid usuarioId, string prompt);
         Task<LookResponse?> GerarDescricaoImagemcomFOTOAsync(Guid usuarioId, string promptUsuario);
+        Task<string> TestarVisaoIAAsync(Guid usuarioId, string imagemUrl);
     }
 }

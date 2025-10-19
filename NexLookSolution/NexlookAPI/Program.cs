@@ -66,7 +66,12 @@ builder.Services.AddCors(options =>
         builder =>
         {
             builder
-                .WithOrigins("http://localhost:3000","http://localhost:5173", "https://nexlook-app.vercel.app", "https://nexlookapi-bdaqehg2cpehaega.brazilsouth-01.azurewebsites.net") // URL do seu frontend
+                .WithOrigins("http://localhost:3000",
+                "http://localhost:5173", 
+                "https://nexlook-app.vercel.app", 
+                "https://nexlookapi-bdaqehg2cpehaega.brazilsouth-01.azurewebsites.net",
+                "https://nexkontrol-front-fszs.vercel.app"
+                ) // URL do seu frontend
                 .AllowAnyHeader()
                 .AllowAnyMethod()
                 .AllowCredentials();
@@ -200,7 +205,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 app.UseHttpsRedirection();
-app.UseCors("AllowSpecificOrigin");
 
 // Add request logging middleware
 app.Use(async (context, next) =>
@@ -221,6 +225,8 @@ app.Use(async (context, next) =>
 });
 
 app.UseRouting();
+app.UseCors("AllowSpecificOrigin");
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

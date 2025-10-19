@@ -490,5 +490,62 @@ namespace Application.Services.IAService
 
             return sanitized;
         }
+
+        public async Task<string> TestarVisaoIAAsync(Guid usuarioId, string imagemUrl)
+        {
+            var messages = new List<object>
+            {
+                new {
+                    role = "system",
+                    content = "Você é um assistente que descreve roupas em imagens. Descreva DETALHADAMENTE o que você vê na imagem: cores, tipo de roupa, tecido, estilo, etc."
+                },
+                new {
+                    role = "user",
+                    content = new List<object>
+                    {
+                        new { type = "text", text = "Descreva detalhadamente a roupa nesta imagem:" },
+                        new { type = "image_url", image_url = new { url = imagemUrl } }
+                    }
+                }
+            };
+
+            var body = new
+            {
+                model = "gpt-4o-mini", // ou gpt-4-vision-preview
+                messages,
+                max_tokens = 300,
+                temperature = 0.1
+            };
+
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions")
+            {
+                Headers = { { "Authorization", $"Bearer {_apiKey}" } },
+                Content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json")
+            };
+
+            var response = await _httpClient.SendAsync(request);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                return ProcessarRespostaOpenAI(responseContent);
+            }
+
+            return $"Erro: {responseContent}";
+        }
+
+        private async Task<bool> VerificarPlanoAtivo(Guid usuarioId)
+        {
+            try
+            {
+                var usuario = await _context.Usuarios.FindAsync(usuarioId);
+                var plano = 
+                return usuario != null;
+            }
+            catch (Exception ex) 
+            { 
+            
+            }
+        }
     }
 }

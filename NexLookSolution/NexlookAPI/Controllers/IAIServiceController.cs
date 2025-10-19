@@ -73,5 +73,28 @@ namespace NexlookAPI.Controllers
                 return StatusCode(500, "Ocorreu um erro interno ao processar sua solicitação");
             }
         }
+        [HttpPost("GerarDescricaoImagemTeste")]
+        public async Task<IActionResult> GerarDescricaoImagemTeste([FromBody] GerarDescricaoImagemRequest prompt)
+        {
+            try
+            {
+                var userId = GetUserId();
+                _logger.LogInformation("Processando prompt para usuário {UserId}. Prompt: {Prompt}", userId, prompt.PromptUsuario);
+                var descricao = await _iaIService.TestarVisaoIAAsync(userId, prompt.PromptUsuario);
+                
+                _logger.LogInformation("Descrição gerada com sucesso para usuário {UserId}", userId);
+                return Ok(new { Descricao = descricao });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogError(ex, "Erro de autorização ao gerar descrição");
+                return Unauthorized(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao gerar descrição de imagem: {Error}", ex.Message);
+                return StatusCode(500, "Ocorreu um erro interno ao processar sua solicitação");
+            }
+        }
     }
 }
