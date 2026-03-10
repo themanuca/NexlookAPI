@@ -6,8 +6,6 @@ namespace Application.Interfaces
     {
         Task<StorageUploadResult> UploadAsync(IFormFile file);
         Task<bool> DeleteAsync(string publicId);
-        Task<bool> DeleteFirebaseAsync(string publicId);
-        Task<StorageUploadResult> UploadFirebaseAsync(IFormFile file);
     }
 
     public class StorageUploadResult

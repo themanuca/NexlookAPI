@@ -56,7 +56,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddScoped<IUploadImagemService, UploadImagemService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAIService, IAservice>();
-builder.Services.AddScoped<IStorageService, CloudinaryStorageService>();
+builder.Services.AddScoped<IStorageService, SupabaseStorageService>();
 builder.Services.AddAuthorization();
 
 // Adicione esta configuração do CORS

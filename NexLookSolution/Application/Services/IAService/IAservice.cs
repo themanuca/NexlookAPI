@@ -434,10 +434,10 @@ namespace Application.Services.IAService
                     return false;
                 }
 
-                // Verifica se a imagem é do Cloudinary (sua fonte confiável)
-                if (!imageUrl.Contains("cloudinary.com"))
+                // Verifica se o schema é HTTPS
+                if (uri!.Scheme != Uri.UriSchemeHttps)
                 {
-                    _logger.LogWarning("Imagem não é do Cloudinary: {ImageUrl}", imageUrl);
+                    _logger.LogWarning("URL de imagem não usa HTTPS: {ImageUrl}", imageUrl);
                     return false;
                 }
 
