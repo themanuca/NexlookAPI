@@ -1,0 +1,124 @@
+using Application.DTOs.Auth;
+using Domain.Models;
+using Infra.dbContext;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+
+public class AuthService : IAuthService
+{
+    private readonly AppDbContext _context;
+    private readonly IConfiguration _configuration;
+
+    public AuthService(AppDbContext context, IConfiguration configuration)
+    {
+        _context = context;
+        _configuration = configuration;
+    }
+
+    public async Task<AuthResponseDto> LoginAsync(LoginRequest request)
+    {
+        if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
+        {
+            return new AuthResponseDto { Sucesso = false, Mensagem = "Email e senha são obrigatórios." };
+        }
+
+        var user = await _context.Usuarios
+            .FirstOrDefaultAsync(u => u.Email == request.Email);
+
+        if (user == null)
+        {
+            return new AuthResponseDto { Sucesso = false, Mensagem = "Credenciais inválidas." };
+        }
+
+        var passwordHasher = new PasswordHasher<Usuario>();
+        var result = passwordHasher.VerifyHashedPassword(user, user.SenhaHash, request.Password);
+        if (result == PasswordVerificationResult.Failed)
+        {
+            return new AuthResponseDto { Sucesso = false, Mensagem = "Credenciais inválidas." };
+        }
+
+        var token = GenerateJwtToken(user);
+
+        return new AuthResponseDto
+        { 
+            Sucesso = true, 
+            Token = token,
+            Name = user.Nome,
+            Email = user.Email,
+            UserId = user.Id
+        };
+    }
+
+    public async Task<AuthResponseDto> RegisterAsync(RegisterRequest request)
+    {
+        if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
+        {
+            return new AuthResponseDto { Sucesso = false, Mensagem = "Email e senha são obrigatórios." };
+        }
+
+        if (await _context.Usuarios.AnyAsync(u => u.Email == request.Email))
+        {
+
+            return new AuthResponseDto { Sucesso = false, Mensagem = "Email j� cadastrado." };
+        }
+        var passwordHasher = new PasswordHasher<Usuario>();
+
+
+        var user = new Usuario
+        {
+            Id = Guid.NewGuid(),
+            Nome = request.Nome,
+            Email = request.Email,
+            DataCriacao = DateTime.UtcNow,
+            DataAtualizacao = DateTime.UtcNow
+        };
+
+        user.SenhaHash = passwordHasher.HashPassword(user, request.Password);
+
+        await _context.Usuarios.AddAsync(user);
+        await _context.SaveChangesAsync();
+
+        var token = GenerateJwtToken(user);
+
+        return new AuthResponseDto
+        { 
+            Sucesso = true, 
+            Token = token,
+            Mensagem = "Usu�rio criado com sucesso!",
+            Name = user.Nome,
+            Email = user.Email,
+            UserId = user.Id
+        };
+    }
+
+    private string GenerateJwtToken(Usuario user)
+    {
+        var jwtSettings = _configuration.GetSection("JwtSettings");
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!));
+
+        var claims = new List<Claim>
+        {
+            new Claim("codeVerify", user.Id.ToString()),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email),
+            new Claim("email", user.Email)
+        };
+
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var expires = DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["ExpiresInMinutes"]));
+
+        var token = new JwtSecurityToken(
+            issuer: jwtSettings["Issuer"],
+            audience: jwtSettings["Audience"],
+            claims: claims,
+            expires: expires,
+            signingCredentials: creds
+        );
+        var tokeyGenerate = new JwtSecurityTokenHandler().WriteToken(token);
+        return tokeyGenerate;
+    }
+}

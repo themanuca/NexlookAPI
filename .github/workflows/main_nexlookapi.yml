@@ -1,0 +1,64 @@
+name: Build and deploy ASP.Net Core app to Azure Web App - NexlookAPI
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.x'
+
+    # Forçar restore limpo (sem cache)
+    - name: Restore dependencies
+      run: dotnet restore ./NexLookSolution/NexlookAPI/NexlookAPI.csproj --runtime win-x86
+
+    - name: Build with dotnet
+      run: dotnet build ./NexLookSolution/NexlookAPI/NexlookAPI.csproj --configuration Release --no-restore --runtime win-x86
+
+    # Publicar em win-x64 (compatível com Azure App Service)
+    - name: Publish with dotnet
+      run: dotnet publish ./NexLookSolution/NexlookAPI/NexlookAPI.csproj -c Release --self-contained false -o ./publish
+
+    - name: Upload publish artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: .net-app
+        path: ./publish
+
+  deploy:
+    runs-on: windows-latest
+    needs: build
+
+    steps:
+    - name: Download publish artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: .net-app
+        path: ./publish
+
+    - name: 'Login to Azure'
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    # Adicionar parâmetro para limpar antes do deploy
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: 'NexlookAPI'
+        slot-name: 'Production'
+        package: ./publish
+        clean: true
+
+
+
