@@ -17,7 +17,9 @@ RUN dotnet publish ./NexLookSolution/NexlookAPI/NexlookAPI.csproj -c Release -o 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/out .
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "ASPNETCORE_URLS=http://+:${PORT:-8080} dotnet NexlookAPI.dll"]
+ENTRYPOINT ["/entrypoint.sh"]
